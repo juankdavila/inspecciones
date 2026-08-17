@@ -169,45 +169,111 @@ class DetalleInspeccion extends StatelessWidget {
             ],
           ]),
 
-          // --- Fotos: se cargan desde la subcolección ---
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('inspecciones')
-                .doc(inspeccionId)
-                .collection('fotos')
-                .orderBy('orden')
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return const SizedBox.shrink();
-              }
-              final fotos = snapshot.data!.docs;
-              return _tarjeta('FOTOS (${fotos.length})', [
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: fotos.length,
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  itemBuilder: (context, index) {
-                    final fotoDatos =
-                        fotos[index].data() as Map<String, dynamic>;
-                    final bytes = base64Decode(fotoDatos['base64']);
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.memory(bytes, fit: BoxFit.cover),
-                    );
-                  },
-                ),
-              ]);
-            },
+          _FotosInspeccion(
+            inspeccionId: inspeccionId,
+            fotosStorage: datos['fotos'] as List<dynamic>? ?? const [],
+            tarjeta: _tarjeta,
           ),
         ],
       ),
+    );
+  }
+}
+
+class _FotosInspeccion extends StatelessWidget {
+  final String inspeccionId;
+  final List<dynamic> fotosStorage;
+  final Widget Function(String titulo, List<Widget> hijos) tarjeta;
+
+  const _FotosInspeccion({
+    required this.inspeccionId,
+    required this.fotosStorage,
+    required this.tarjeta,
+  });
+
+  int _ordenFoto(Map<String, dynamic> foto) {
+    final orden = foto['orden'];
+    if (orden is int) return orden;
+    return int.tryParse(orden?.toString() ?? '') ?? 0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (fotosStorage.isNotEmpty) {
+      final fotos = List<Map<String, dynamic>>.from(
+        fotosStorage.map((foto) => Map<String, dynamic>.from(foto as Map)),
+      )..sort((a, b) => _ordenFoto(a).compareTo(_ordenFoto(b)));
+
+      return tarjeta('FOTOS (${fotos.length})', [
+        _GridFotos(
+          itemCount: fotos.length,
+          itemBuilder: (context, index) {
+            final url = fotos[index]['url']?.toString() ?? '';
+            return Image.network(
+              url,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+            );
+          },
+        ),
+      ]);
+    }
+
+    // Compatibilidad con inspecciones antiguas que aún guardaban las fotos
+    // como Base64 en la subcolección inspecciones/{id}/fotos.
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('inspecciones')
+          .doc(inspeccionId)
+          .collection('fotos')
+          .orderBy('orden')
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        final fotos = snapshot.data!.docs;
+        return tarjeta('FOTOS (${fotos.length})', [
+          _GridFotos(
+            itemCount: fotos.length,
+            itemBuilder: (context, index) {
+              final fotoDatos = fotos[index].data() as Map<String, dynamic>;
+              final bytes = base64Decode(fotoDatos['base64']);
+              return Image.memory(bytes, fit: BoxFit.cover);
+            },
+          ),
+        ]);
+      },
+    );
+  }
+}
+
+class _GridFotos extends StatelessWidget {
+  final int itemCount;
+  final Widget Function(BuildContext context, int index) itemBuilder;
+
+  const _GridFotos({
+    required this.itemCount,
+    required this.itemBuilder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: itemCount,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
+      itemBuilder: (context, index) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: itemBuilder(context, index),
+        );
+      },
     );
   }
 }

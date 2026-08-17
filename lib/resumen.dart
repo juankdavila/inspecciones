@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'datos_inspeccion.dart';
 import 'numeracion.dart';
 
@@ -76,19 +78,19 @@ class _PantallaResumenState extends State<PantallaResumen> {
       // en el momento en que se confirma el guardado
       final numeroInspeccion = await Numeracion.generarNumeroInspeccion();
 
+      final usuarioActual = FirebaseAuth.instance.currentUser;
+      if (usuarioActual == null) {
+        throw Exception('Debes iniciar sesión para guardar la inspección.');
+      }
+
       // Convertir la firma a texto Base64
       final firmaBase64 = base64Encode(datos.firmaAsegurado);
-
-      // Convertir las fotos a texto Base64 (una por una)
-      final List<String> fotosBase64 = [];
-      for (final foto in datos.fotos) {
-        final bytes = await foto.readAsBytes();
-        fotosBase64.add(base64Encode(bytes));
-      }
 
       final docRef = FirebaseFirestore.instance
           .collection('inspecciones')
           .doc(numeroInspeccion);
+
+      final fotos = await _subirFotosAStorage(numeroInspeccion);
 
       await docRef.set({
         'numeroInspeccion': numeroInspeccion,
@@ -134,18 +136,11 @@ class _PantallaResumenState extends State<PantallaResumen> {
         'nombreInspector': datos.nombreInspector,
         'fechaHoraFirmaInspector': datos.fechaHoraFirmaInspector,
         'firmaAseguradoBase64': firmaBase64,
-        'cantidadFotos': fotosBase64.length,
+        'inspectorUid': usuarioActual.uid,
+        'cantidadFotos': fotos.length,
+        'fotos': fotos,
         'fechaCreacion': FieldValue.serverTimestamp(),
       });
-
-      // Guardamos cada foto como un documento separado, para no
-      // pasarnos del límite de 1MB por documento en Firestore
-      for (int i = 0; i < fotosBase64.length; i++) {
-        await docRef.collection('fotos').doc('foto_$i').set({
-          'base64': fotosBase64[i],
-          'orden': i,
-        });
-      }
 
       if (!mounted) return;
 
@@ -169,6 +164,40 @@ class _PantallaResumenState extends State<PantallaResumen> {
     } finally {
       if (mounted) setState(() => _guardando = false);
     }
+  }
+
+  Future<List<Map<String, dynamic>>> _subirFotosAStorage(
+    String numeroInspeccion,
+  ) async {
+    final storage = FirebaseStorage.instance;
+    final fotosSubidas = <Map<String, dynamic>>[];
+
+    for (int i = 0; i < widget.datos.fotos.length; i++) {
+      final foto = widget.datos.fotos[i];
+      final nombreArchivo = 'foto_${i.toString().padLeft(3, '0')}.jpg';
+      final rutaStorage = 'inspecciones/$numeroInspeccion/$nombreArchivo';
+      final referencia = storage.ref(rutaStorage);
+
+      await referencia.putFile(
+        foto,
+        SettableMetadata(
+          contentType: 'image/jpeg',
+          customMetadata: {
+            'numeroInspeccion': numeroInspeccion,
+            'orden': i.toString(),
+          },
+        ),
+      );
+
+      fotosSubidas.add({
+        'orden': i,
+        'nombreArchivo': nombreArchivo,
+        'rutaStorage': rutaStorage,
+        'url': await referencia.getDownloadURL(),
+      });
+    }
+
+    return fotosSubidas;
   }
 
   @override
