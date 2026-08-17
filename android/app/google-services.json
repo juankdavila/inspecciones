@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "870642810925",
+    "project_id": "inspecciones-70d66",
+    "storage_bucket": "inspecciones-70d66.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:870642810925:android:68c68297be0fc7ae85b8a4",
+        "android_client_info": {
+          "package_name": "com.example.inspecciones"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6vM1Z6cnN7SiWRpouEE2L6wIL5SZFt_Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

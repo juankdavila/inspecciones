@@ -1,0 +1,53 @@
+name: inspecciones
+description: "A new Flutter project."
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  firebase_core: ^4.13.0
+  firebase_auth: ^6.5.7
+  cloud_firestore: ^6.8.0
+  firebase_storage: ^13.4.6
+  signature: ^6.4.0
+  image_picker: ^1.2.3
+  pdf: ^3.13.0
+  printing: ^5.15.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+  flutter_native_splash: ^2.4.6
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/image/colprevi.png
+
+
+# ============================================================
+# CONFIGURACIÓN DEL SPLASH SCREEN
+# ============================================================
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/image/colprevi.png
+
+  android: true
+  ios: true
+
+  android_12:
+    color: "#FFFFFF"
+    image: assets/image/colprevi.png

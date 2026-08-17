@@ -1,0 +1,64 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "inspecciones-70d66",
+          "appId": "1:870642810925:android:68c68297be0fc7ae85b8a4",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "inspecciones-70d66",
+          "configurations": {
+            "android": "1:870642810925:android:68c68297be0fc7ae85b8a4",
+            "ios": "1:870642810925:ios:37093cde2c81528a85b8a4",
+            "macos": "1:870642810925:ios:37093cde2c81528a85b8a4",
+            "web": "1:870642810925:web:e44e82537f1230e185b8a4",
+            "windows": "1:870642810925:web:cc64a058a6b9cd2b85b8a4"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "storage": {
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true
+    },
+    "singleProjectMode": true
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint"
+      ]
+    }
+  ]
+}
